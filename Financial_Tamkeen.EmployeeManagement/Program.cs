@@ -1,5 +1,8 @@
 using Financial_Tamkeen.EmployeeManagement;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 //builder.AddDbContext<BloggingContext>(options =>
@@ -15,6 +18,27 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContex>(options =>
   options.UseSqlServer(builder.Configuration.GetConnectionString("AppDbContext")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+
+//Jwt configuration starts here
+var UserName = builder.Configuration.GetSection("Jwt:Issuer").Get<string>();
+var Password = builder.Configuration.GetSection("Jwt:Key").Get<string>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+ .AddJwtBearer(options =>
+ {
+     options.TokenValidationParameters = new TokenValidationParameters
+     {
+         ValidateIssuer = true,
+         ValidateAudience = true,
+         ValidateLifetime = true,
+         ValidateIssuerSigningKey = true,
+         ValidIssuer = UserName,
+         ValidAudience = Password,
+         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(UserName))
+     };
+ });
+//Jwt configuration ends here
 
 
 builder.Services.AddControllers();
