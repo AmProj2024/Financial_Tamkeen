@@ -14,6 +14,8 @@ namespace Financial_Tamkeen.EmployeeManagement
         public DbSet<Employee> Employee { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+                    modelBuilder.Entity<Employee>().ToTable("Employee");
+
             base.OnModelCreating(modelBuilder);
         }
     }
