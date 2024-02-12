@@ -1,6 +1,9 @@
 using Financial_Tamkeen.EmployeeManagement.Models;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -12,20 +15,31 @@ namespace Financial_Tamkeen.EmployeeManagement.Controllers
     {
 
         private readonly AppDbContex _DbContext;
+        private readonly JsonSerializerOptions _jsonOptions;
+
         public EmployeeController(AppDbContex DbContext)
         {
             this._DbContext = DbContext;
-
+            _jsonOptions = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.Preserve,
+                IgnoreNullValues = true,
+                MaxDepth = 10  // Specify the maximum depth to avoid excessive nesting
+            };
 
         }
         // GET: api/<EmployeeController>
         [HttpGet("GetAllEmployee")]
-        public async Task<ActionResult<Employee>> GetAllEmployee()
+        public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
         {
-            //   return new string[] { "value1", "value2" };
+            var employees = await _DbContext.Employee
+            .ToListAsync();
 
-            var Employess = await this._DbContext.Employee.ToListAsync();
-            return Ok(Employess);
+            var serializedEmployees = System.Text.Json.JsonSerializer.Serialize(employees, _jsonOptions);
+
+            return Content(serializedEmployees, "application/json");
+
+            //    return Ok(employees);
         }
 
         // GET api/<EmployeeController>/5
@@ -33,9 +47,17 @@ namespace Financial_Tamkeen.EmployeeManagement.Controllers
         public async Task<ActionResult<Employee>>GetEmployeeId(int id)
         {
 
-            var Employee = await this._DbContext.Employee.FirstOrDefaultAsync(x=>x.EmployeeId == id);
-            return Ok(Employee);
-            // return "value";
+            var employee = await _DbContext.Employee
+                .FirstOrDefaultAsync(e => e.EmployeeId == id);
+
+            if (employee == null)
+            {
+                return NotFound();
+            }
+
+            var serializedEmployees = System.Text.Json.JsonSerializer.Serialize(employee, _jsonOptions);
+
+            return Content(serializedEmployees, "application/json");
         }
 
 
@@ -53,30 +75,49 @@ namespace Financial_Tamkeen.EmployeeManagement.Controllers
 
         // PUT api/<EmployeeController>/5
         [HttpPut("{id}")]
-        public void Put(Employee EMP)
+        public async Task<ActionResult<Employee>> UpdateEmployee(int id, Employee employee)
         {
-           // var Emp = this._DbContext.Employee.FirstOrDefault(x => x.EmployeeId == id);
-            if (EMP != null)
+            if (id != employee.EmployeeId)
             {
-                _DbContext.Employee.Update(EMP);
-
+                return BadRequest();
             }
-            this._DbContext.SaveChanges();
 
+            _DbContext.Entry(employee).State = EntityState.Modified;
+
+            try
+            {
+                await _DbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!_DbContext.Employee.Any(e => e.EmployeeId == id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
         }
 
         // DELETE api/<EmployeeController>/5
         [HttpDelete("{DeleteEmployeeid}")]
-        public  void Delete(int id)
+        public async Task<IActionResult> DeleteEmployee(int id)
         {
-            var Emp = this._DbContext.Employee.FirstOrDefault(x=>x.EmployeeId==id);
-            if (Emp!=null)
+            var employee = await _DbContext.Employee.FindAsync(id);
+
+            if (employee == null)
             {
-                var lll =  _DbContext.Employee.Remove(Emp);
-
+                return NotFound();
             }
-            this._DbContext.SaveChanges();
 
+            _DbContext.Employee.Remove(employee);
+            await _DbContext.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
