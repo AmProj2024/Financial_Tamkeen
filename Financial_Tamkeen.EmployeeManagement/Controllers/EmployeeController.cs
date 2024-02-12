@@ -1,4 +1,4 @@
-﻿using Financial_Tamkeen.EmployeeManagement.Models;
+using Financial_Tamkeen.EmployeeManagement.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,9 +53,15 @@ namespace Financial_Tamkeen.EmployeeManagement.Controllers
 
         // PUT api/<EmployeeController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public void Put(Employee EMP)
         {
+           // var Emp = this._DbContext.Employee.FirstOrDefault(x => x.EmployeeId == id);
+            if (EMP != null)
+            {
+                _DbContext.Employee.Update(EMP);
 
+            }
+            this._DbContext.SaveChanges();
 
         }
 
@@ -66,7 +72,7 @@ namespace Financial_Tamkeen.EmployeeManagement.Controllers
             var Emp = this._DbContext.Employee.FirstOrDefault(x=>x.EmployeeId==id);
             if (Emp!=null)
             {
-                var lll =  _DbContext.Employee.Update(Emp);
+                var lll =  _DbContext.Employee.Remove(Emp);
 
             }
             this._DbContext.SaveChanges();
