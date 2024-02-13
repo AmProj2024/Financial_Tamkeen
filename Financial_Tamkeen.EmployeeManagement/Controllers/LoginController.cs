@@ -12,113 +12,42 @@ namespace Financial_Tamkeen.EmployeeManagement.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class LoginController
+    public class LoginController:ControllerBase
     {
-
-        private readonly AppDbContex _DbContext;
-        private readonly JsonSerializerOptions _jsonOptions;
-
-        public EmployeeController(AppDbContex DbContext)
-        {
-            this._DbContext = DbContext;
-            _jsonOptions = new JsonSerializerOptions
+            private IConfiguration _config;
+            public LoginController(IConfiguration config)
             {
-                ReferenceHandler = ReferenceHandler.Preserve,
-                IgnoreNullValues = true,
-                MaxDepth = 10  // Specify the maximum depth to avoid excessive nesting
-            };
-
-        }
-        // GET: api/<EmployeeController>
-        [HttpGet("GetAllEmployee")]
-        public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees()
-        {
-            var employees = await _DbContext.Employee
-            .ToListAsync();
-
-            var serializedEmployees = System.Text.Json.JsonSerializer.Serialize(employees, _jsonOptions);
-
-            return Content(serializedEmployees, "application/json");
-
-            //    return Ok(employees);
-        }
-
-        // GET api/<EmployeeController>/5
-        [HttpGet("{GetEmployeeId}")]
-        public async Task<ActionResult<Employee>>GetEmployeeId(int id)
-        {
-
-            var employee = await _DbContext.Employee
-                .FirstOrDefaultAsync(e => e.EmployeeId == id);
-
-            if (employee == null)
-            {
-                return NotFound();
+                _config = config;
             }
 
-            var serializedEmployees = System.Text.Json.JsonSerializer.Serialize(employee, _jsonOptions);
-
-            return Content(serializedEmployees, "application/json");
-        }
-
-
-
-        // POST api/<EmployeeController>
-        [HttpPost("CreateNEwEmployee")]
-        
-        public async Task<ActionResult<Employee>> Post(Employee Emp)
-        {
-            var employee =await this._DbContext.Employee.AddAsync(Emp);
-            await this._DbContext.SaveChangesAsync();   
-            return  Ok(employee);
-
-        }
-
-        // PUT api/<EmployeeController>/5
-        [HttpPut("{id}")]
-        public async Task<ActionResult<Employee>> UpdateEmployee(int id, Employee employee)
-        {
-            if (id != employee.EmployeeId)
+            [HttpPost]
+            public IActionResult Post(Login login)
             {
-                return BadRequest();
-            }
 
-            _DbContext.Entry(employee).State = EntityState.Modified;
-
-            try
+            /// refactor this from db
+            if (login.Password != "123456")
             {
-                await _DbContext.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_DbContext.Employee.Any(e => e.EmployeeId == id))
+                var resp = new HttpResponseMessage(HttpStatusCode.NotFound)
                 {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                    Content = new StringContent(string.Format("Login Erorr")),
+                    ReasonPhrase = "Login Erorr"
+                };
+                throw new System.Web.Http.HttpResponseException(resp);
             }
 
-            return NoContent();
-        }
+                var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+                var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-        // DELETE api/<EmployeeController>/5
-        [HttpDelete("{DeleteEmployeeid}")]
-        public async Task<IActionResult> DeleteEmployee(int id)
-        {
-            var employee = await _DbContext.Employee.FindAsync(id);
+                var Sectoken = new JwtSecurityToken(_config["Jwt:Issuer"],
+                  _config["Jwt:Issuer"],
+                  null,
+                  expires: DateTime.Now.AddMinutes(120),
+                  signingCredentials: credentials);
 
-            if (employee == null)
-            {
-                return NotFound();
+                var token = new JwtSecurityTokenHandler().WriteToken(Sectoken);
+
+                return Ok(token);
             }
-
-            _DbContext.Employee.Remove(employee);
-            await _DbContext.SaveChangesAsync();
-
-            return NoContent();
         }
     }
-}
+    
