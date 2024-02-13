@@ -1,4 +1,4 @@
-﻿using Financial_Tamkeen.EmployeeManagement.Models;
+using Financial_Tamkeen.EmployeeManagement.Models;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -63,8 +63,9 @@ namespace Financial_Tamkeen.EmployeeManagement.Controllers
         }
 
 
-        [Authorize]
+
         // POST api/<EmployeeController>
+        [Authorize]
         [HttpPost("CreateNEwEmployee")]
         
         public async Task<ActionResult<Employee>> Post(Employee Emp)
