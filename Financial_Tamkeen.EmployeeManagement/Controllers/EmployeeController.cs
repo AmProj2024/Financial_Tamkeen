@@ -64,6 +64,7 @@ namespace Financial_Tamkeen.EmployeeManagement.Controllers
 
 
         // POST api/<EmployeeController>
+        [Authorize]
         [HttpPost("CreateNEwEmployee")]
         
         public async Task<ActionResult<Employee>> Post(Employee Emp)
