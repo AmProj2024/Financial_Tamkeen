@@ -16,5 +16,18 @@ namespace Financial_Tamkeen.EmployeeManagement.Models
         public string Department { get; set; }
         [Required]
         public decimal Salary { get; set; }
+
+
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
+            {
+                yield return new ValidationResult(
+                    "Emploee name cannot empty",
+                    new[] { nameof(FirstName), nameof(LastName) });
+            }
+        }
+
     }
 }

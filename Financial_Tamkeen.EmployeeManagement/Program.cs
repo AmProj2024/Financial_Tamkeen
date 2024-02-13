@@ -63,6 +63,8 @@ if (app.Environment.IsDevelopment())
 //    context.Database.EnsureCreated();
 //    //DbInitializer.Initialize(context);
 //}
+
+app.UseAuthentication();    
 app.UseAuthorization();
 
 app.MapControllers();
