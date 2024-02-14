@@ -1,55 +1,59 @@
-
+//using Financial_Tamkeen.Models;
 using Financial_Tamkeen.EmployeeManagement.Models;
-using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Serialization;
-using System.Text.Json;
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Net;
-using System.Text; 
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Financial_Tamkeen.EmployeeManagement.Controllers
+namespace Financial_Tamkeen.Controllers
 {
+    [AllowAnonymous]
     [Route("api/[controller]")]
     [ApiController]
-    public class LoginController:ControllerBase
+    public class LoginController : ControllerBase
     {
-            private IConfiguration _config;
-            public LoginController(IConfiguration config)
-            {
-                _config = config;
-            }
+        private readonly IConfiguration _configuration;
 
-            [HttpPost]
-            public IActionResult Post(Login login)
-            {
+        public LoginController(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
 
-            /// refactor this from db
-            if (login.Password != "123456")
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<IActionResult> Login(login model)
+        {
+            var issuer = _configuration.GetValue<string>("Jwt:Issuer");
+            var key = _configuration.GetValue<string>("Jwt:Key");
+
+            if (model.Email == "admin" && model.Password == "123456")
             {
-                var resp = new HttpResponseMessage(HttpStatusCode.NotFound)
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var tokenDescriptor = new SecurityTokenDescriptor
                 {
-                    Content = new StringContent(string.Format("Login Erorr")),
-                    ReasonPhrase = "Login Erorr"
+                    Subject = new ClaimsIdentity(new[]
+                    {
+                new Claim(ClaimTypes.Name, model.Email)
+            }),
+                    Expires = DateTime.UtcNow.AddDays(7),
+                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256Signature)
                 };
-                throw new System.Web.Http.HttpResponseException(resp);
+                var token = tokenHandler.CreateToken(tokenDescriptor);
+                var tokenString = tokenHandler.WriteToken(token);
+
+                // Return the token as a response
+                return Ok(new { Token = tokenString });
             }
-
-                var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-                var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-                var Sectoken = new JwtSecurityToken(_config["Jwt:Issuer"],
-                  _config["Jwt:Issuer"],
-                  null,
-                  expires: DateTime.Now.AddMinutes(120),
-                  signingCredentials: credentials);
-
-                var token = new JwtSecurityTokenHandler().WriteToken(Sectoken);
-
-                return Ok(token);
+            else
+            {
+                return Unauthorized();
             }
         }
+
     }
-    
+}

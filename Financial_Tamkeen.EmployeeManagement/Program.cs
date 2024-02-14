@@ -15,29 +15,34 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 
+
+var jwtOptions = builder.Configuration.GetSection("Jwt");
+var issuer = jwtOptions.GetValue<string>("Issuer");
+var key = jwtOptions.GetValue<string>("Key");
+
 builder.Services.AddDbContext<AppDbContex>(options =>
   options.UseSqlServer(builder.Configuration.GetConnectionString("AppDbContext")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 
 //Jwt configuration starts here
-var UserName = builder.Configuration.GetSection("Jwt:Issuer").Get<string>();
-var Password = builder.Configuration.GetSection("Jwt:Key").Get<string>();
+//var UserName = builder.Configuration.GetSection("Jwt:Issuer").Get<string>();
+//var Password = builder.Configuration.GetSection("Jwt:Key").Get<string>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
- .AddJwtBearer(options =>
- {
-     options.TokenValidationParameters = new TokenValidationParameters
-     {
-         ValidateIssuer = true,
-         ValidateAudience = true,
-         ValidateLifetime = true,
-         ValidateIssuerSigningKey = true,
-         ValidIssuer = UserName,
-         ValidAudience = Password,
-         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(UserName))
-     };
- });
+               .AddJwtBearer(options =>
+               {
+                   options.TokenValidationParameters = new TokenValidationParameters
+                   {
+                       ValidateIssuer = true,
+                       ValidateAudience = true,
+                       ValidateLifetime = true,
+                       ValidateIssuerSigningKey = true,
+                       ValidIssuer = issuer,
+                       ValidAudience = issuer,
+                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+                   };
+               });
 //Jwt configuration ends here
 
 
