@@ -5,16 +5,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-//builder.AddDbContext<BloggingContext>(options =>
-//       options.UseSqlServer(Configuration.GetConnectionString("BloggingDatabase")));
-// Add services to the container.
-//builder.Services.AddDbContext<AppDbContex>(options =>
-//options.UseSqlServer(
-//builder.Configuration.GetConnectionString("Data Source=02-TRI-TRAINING\\TEST3;Initial Catalog=Financial_Tamekeen;Integrated Security=True;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=true")
-//));
-
-
-
 
 var jwtOptions = builder.Configuration.GetSection("Jwt");
 var issuer = jwtOptions.GetValue<string>("Issuer");
